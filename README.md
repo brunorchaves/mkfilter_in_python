@@ -8,12 +8,17 @@
 # Install
 pip install numpy
 
-# Design a Butterworth lowpass filter
+# Design a Butterworth lowpass filter using Hz (EASY! ✨)
+python mkfilter.py -Bu -Lp -o 4 -f 1000 -s 10000
+
+# Or use normalized frequency (traditional)
 python mkfilter.py -Bu -Lp -o 4 -a 0.1
 
 # Generate C code ready to copy-paste
-python mkfilter.py -Bu -Lp -o 4 -a 0.1 -c
+python mkfilter.py -Bu -Lp -o 4 -f 1000 -s 10000 -c
 ```
+
+**New in v1.1:** Now you can specify frequencies directly in Hz with `-f` and `-s`! No more manual alpha calculations! 🎉
 
 **See [QUICK_START.md](QUICK_START.md) for immediate usage or [README_PYTHON.md](README_PYTHON.md) for full documentation.**
 
@@ -54,19 +59,21 @@ way to use the mkfilter package.
 ## Python Implementation - New!
 
 This repository now includes a complete Python implementation that:
+- ✅ **NEW v1.1:** Specify frequencies in Hz directly! `-f 1000 -s 10000` 🎉
 - ✅ Maintains 100% syntax compatibility with original
 - ✅ Generates identical C code output
 - ✅ Can be used as a Python library
 - ✅ No compilation needed
 - ✅ Cross-platform (Windows, Linux, macOS)
-- ✅ Includes examples and tests
+- ✅ Includes examples and tests (all passing)
 
 ### Files
 
 **Python Implementation (NEW):**
 - `mkfilter.py` - Main Python implementation
 - `README_PYTHON.md` - Complete Python documentation
-- `QUICK_START.md` - Quick reference guide
+- `QUICK_START.md` - Quick reference guide (updated with Hz examples!)
+- `CHANGELOG.md` - Version history and new features
 - `PROJETO_COMPLETO.md` - Complete project summary
 - `example_usage.py` - Examples with visualizations
 - `test_simple.py` - Automated tests
@@ -82,12 +89,27 @@ This repository now includes a complete Python implementation that:
 ### Why Use the Python Version?
 
 1. **No compilation needed** - works immediately
-2. **Easy to integrate** - use as a library in your Python projects
-3. **Generate C code** - for embedded systems and performance-critical applications
-4. **Cross-platform** - runs anywhere Python runs
-5. **Modern workflow** - easier to modify and extend
+2. **Specify frequencies in Hz** - no need to calculate alpha manually! ✨ NEW!
+3. **Easy to integrate** - use as a library in your Python projects
+4. **Generate C code** - for embedded systems and performance-critical applications
+5. **Cross-platform** - runs anywhere Python runs
+6. **Modern workflow** - easier to modify and extend
 
-### Quick Example
+### Quick Example - Command Line (NEW!)
+
+**Using frequencies in Hz (easiest way!):**
+```bash
+# Lowpass: 1 kHz cutoff, 10 kHz sample rate
+python mkfilter.py -Bu -Lp -o 4 -f 1000 -s 10000 -c
+
+# Bandpass: 1-3 kHz, 10 kHz sample rate
+python mkfilter.py -Bu -Bp -o 4 -f 1000 3000 -s 10000 -c
+
+# Notch filter: remove 60 Hz noise
+python mkfilter.py -Bu -Bs -o 2 -f 58 62 -s 1000 -c
+```
+
+### Quick Example - Python Library
 
 ```python
 from mkfilter import MkFilter, generate_c_code
@@ -98,7 +120,7 @@ xcoeffs, ycoeffs = mkf.design(
     filter_type='Bu',  # Butterworth
     band_type='Lp',    # Lowpass
     order=4,
-    alpha1=0.1
+    alpha1=0.1         # Or calculate from Hz: 1000/10000
 )
 
 # Generate C code
