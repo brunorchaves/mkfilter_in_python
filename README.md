@@ -1,6 +1,8 @@
 # mkfilter Digital Filter Generation Program
 
-![IIR digital filter diagram](iirFilter.png)
+<p align="center">
+  <img src="iirFilter.png" alt="IIR digital filter diagram" width="300">
+</p>
 
 **Now available in Python! 🐍**
 
