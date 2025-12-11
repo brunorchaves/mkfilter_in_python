@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python mkfilter.py:*)",
+      "Bash(python:*)",
+      "Bash(move Makefile original_cpp )",
+      "Bash(move doc.al original_cpp )",
+      "Bash(move doc.pdf original_cpp )",
+      "Bash(move:*)",
+      "Bash(tree:*)"
+    ]
+  }
+}
