@@ -1,5 +1,7 @@
 # mkfilter Digital Filter Generation Program
 
+![IIR digital filter diagram](iirFilter.png)
+
 **Now available in Python! 🐍**
 
 ## Quick Start - Python Version
