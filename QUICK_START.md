@@ -6,25 +6,41 @@
 pip install numpy
 ```
 
+## Duas Formas de Especificar Frequências
+
+### Opção 1: Frequências em Hz (Recomendado! ✨)
+```bash
+-f <frequência_Hz> -s <taxa_amostragem_Hz>
+```
+**Mais intuitivo!** Você especifica as frequências reais em Hz.
+
+### Opção 2: Alpha Normalizado (Tradicional)
+```bash
+-a <alpha>
+```
+Onde `alpha = frequência / taxa_amostragem`
+
 ## Uso Rápido
 
 ### 1. Filtro Butterworth Passa-Baixa (mais comum)
 
+**Opção A: Usando frequências em Hz (MAIS FÁCIL! ✨)**
 ```bash
-# Filtro de 4ª ordem, corte em 100 Hz, taxa de amostragem 1000 Hz
-python mkfilter.py -Bu -Lp -o 4 -a 0.1
+# Filtro de 4ª ordem, corte em 1000 Hz, taxa de amostragem 10000 Hz
+python mkfilter.py -Bu -Lp -o 4 -f 1000 -s 10000
 ```
 
-**Como calcular alpha:**
-```
-alpha = frequência_de_corte / taxa_de_amostragem
-alpha = 100 Hz / 1000 Hz = 0.1
+**Opção B: Usando alpha normalizado**
+```bash
+# Mesmo filtro usando alpha = fc/fs = 1000/10000 = 0.1
+python mkfilter.py -Bu -Lp -o 4 -a 0.1
 ```
 
 ### 2. Gerar Código C
 
 ```bash
-python mkfilter.py -Bu -Lp -o 4 -a 0.1 -c
+# Gerar código C diretamente com frequências em Hz
+python mkfilter.py -Bu -Lp -o 4 -f 1000 -s 10000 -c
 ```
 
 **Saída:**
@@ -82,25 +98,26 @@ int main() {
 
 **Passa-Alta (remove DC e baixas frequências):**
 ```bash
-python mkfilter.py -Bu -Hp -o 3 -a 0.2 -c
+# Corta tudo abaixo de 500 Hz (fs = 8000 Hz)
+python mkfilter.py -Bu -Hp -o 3 -f 500 -s 8000 -c
 ```
 
 **Passa-Faixa (mantém apenas uma banda):**
 ```bash
-# Mantém apenas 100-300 Hz (se fs=1000Hz)
-python mkfilter.py -Bu -Bp -o 4 -a 0.1 0.3 -c
+# Mantém apenas 1000-3000 Hz (fs = 10000 Hz)
+python mkfilter.py -Bu -Bp -o 4 -f 1000 3000 -s 10000 -c
 ```
 
 **Rejeita-Faixa/Notch (remove uma banda):**
 ```bash
-# Remove 100-300 Hz
-python mkfilter.py -Bu -Bs -o 4 -a 0.1 0.3 -c
+# Remove ruído de 60 Hz da rede elétrica (fs = 1000 Hz)
+python mkfilter.py -Bu -Bs -o 2 -f 58 62 -s 1000 -c
 ```
 
 **Chebyshev (transição mais abrupta, com ripple):**
 ```bash
-# -1.0 dB de ripple na banda passante
-python mkfilter.py -Ch -1.0 -Lp -o 4 -a 0.15 -c
+# -1.0 dB de ripple, corte em 5 kHz (fs = 44.1 kHz)
+python mkfilter.py -Ch -1.0 -Lp -o 4 -f 5000 -s 44100 -c
 ```
 
 ## Comparação de Filtros

@@ -460,17 +460,21 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # 4th order Butterworth lowpass, corner at 0.1 * sample_rate
+  # Using normalized frequency (alpha = f_corner / f_sample)
   python mkfilter.py -Bu -Lp -o 4 -a 0.1
 
-  # 6th order Butterworth bandpass, 0.2 to 0.3 * sample_rate
-  python mkfilter.py -Bu -Bp -o 6 -a 0.2 0.3
+  # Using actual frequencies in Hz
+  python mkfilter.py -Bu -Lp -o 4 -f 1000 -s 10000
+  # (1000 Hz corner, 10 kHz sample rate)
 
-  # 3rd order Chebyshev highpass with -1dB ripple, corner at 0.25
-  python mkfilter.py -Ch -1.0 -Hp -o 3 -a 0.25
+  # Bandpass filter: 1-3 kHz at 10 kHz sample rate
+  python mkfilter.py -Bu -Bp -o 6 -f 1000 3000 -s 10000
+
+  # Chebyshev highpass with -1dB ripple
+  python mkfilter.py -Ch -1.0 -Hp -o 3 -f 500 -s 8000
 
   # Generate C code
-  python mkfilter.py -Bu -Lp -o 4 -a 0.1 -c
+  python mkfilter.py -Bu -Lp -o 4 -f 100 -s 1000 -c
         """
     )
 
@@ -497,8 +501,16 @@ Examples:
     # Parameters
     parser.add_argument('-o', type=int, required=True, dest='order',
                        help=f'Filter order (1-{MAXORDER})')
-    parser.add_argument('-a', type=float, nargs='+', required=True, dest='alpha',
+
+    # Frequency specification - either alpha or frequencies with sample rate
+    freq_group = parser.add_mutually_exclusive_group(required=True)
+    freq_group.add_argument('-a', type=float, nargs='+', dest='alpha',
                        help='Frequency parameter(s): f_corner/f_sample (1 for LP/HP, 2 for BP/BS)')
+    freq_group.add_argument('-f', type=float, nargs='+', dest='frequencies',
+                       help='Corner frequency/frequencies in Hz (requires -s)')
+
+    parser.add_argument('-s', '--sample-rate', type=float, dest='sample_rate',
+                       help='Sample rate in Hz (required when using -f)')
 
     # Transform options
     parser.add_argument('-z', action='store_false', dest='use_blt',
@@ -521,13 +533,36 @@ Examples:
         print(f"Error: order must be between 1 and {MAXORDER}", file=sys.stderr)
         return 1
 
-    if args.band_type in ['Bp', 'Bs'] and len(args.alpha) != 2:
-        print(f"Error: {args.band_type} requires two alpha values", file=sys.stderr)
-        return 1
+    # Handle frequency specification
+    if args.frequencies is not None:
+        # Using -f option, need sample rate
+        if args.sample_rate is None:
+            print(f"Error: -f requires -s/--sample-rate", file=sys.stderr)
+            return 1
 
-    if args.band_type in ['Lp', 'Hp'] and len(args.alpha) != 1:
-        print(f"Error: {args.band_type} requires one alpha value", file=sys.stderr)
-        return 1
+        # Convert frequencies to alpha
+        frequencies = args.frequencies
+        if args.band_type in ['Bp', 'Bs'] and len(frequencies) != 2:
+            print(f"Error: {args.band_type} requires two frequencies", file=sys.stderr)
+            return 1
+
+        if args.band_type in ['Lp', 'Hp'] and len(frequencies) != 1:
+            print(f"Error: {args.band_type} requires one frequency", file=sys.stderr)
+            return 1
+
+        # Calculate alpha = f / fs
+        alpha = [f / args.sample_rate for f in frequencies]
+    else:
+        # Using -a option directly
+        alpha = args.alpha
+
+        if args.band_type in ['Bp', 'Bs'] and len(alpha) != 2:
+            print(f"Error: {args.band_type} requires two alpha values", file=sys.stderr)
+            return 1
+
+        if args.band_type in ['Lp', 'Hp'] and len(alpha) != 1:
+            print(f"Error: {args.band_type} requires one alpha value", file=sys.stderr)
+            return 1
 
     # Determine filter type
     if args.chebrip is not None:
@@ -541,8 +576,8 @@ Examples:
     mkf = MkFilter()
 
     try:
-        alpha1 = args.alpha[0]
-        alpha2 = args.alpha[1] if len(args.alpha) > 1 else None
+        alpha1 = alpha[0]
+        alpha2 = alpha[1] if len(alpha) > 1 else None
 
         mkf.design(
             filter_type=filter_type,
