@@ -368,9 +368,45 @@ def generate_c_code(mkf: MkFilter, optimize: bool = True) -> str:
     gain = mkf.get_gain()
 
     code = []
-    code.append("/* Digital filter designed by mkfilter.py */")
-    code.append(f"/* {mkf.filter_type} {mkf.band_type} filter, order {mkf.order} */")
-    code.append(f"/* alpha1={mkf.raw_alpha1}, alpha2={mkf.raw_alpha2} */\n")
+    code.append("/* " + "=" * 70 + " */")
+    code.append("/* Digital filter designed by mkfilter.py" + " " * 31 + "*/")
+    code.append("/* " + "=" * 70 + " */")
+
+    # Filter description
+    filter_names = {
+        'Bu': 'Butterworth',
+        'Be': 'Bessel',
+        'Ch': 'Chebyshev'
+    }
+    band_names = {
+        'Lp': 'Lowpass',
+        'Hp': 'Highpass',
+        'Bp': 'Bandpass',
+        'Bs': 'Bandstop'
+    }
+    filter_name = filter_names.get(mkf.filter_type, mkf.filter_type)
+    band_name = band_names.get(mkf.band_type, mkf.band_type)
+
+    code.append(f"/* Filter type:  {filter_name} {band_name}" + " " * (47 - len(filter_name) - len(band_name)) + "*/")
+    code.append(f"/* Order:       {mkf.order}" + " " * (59 - len(str(mkf.order))) + "*/")
+
+    # Add frequency information if available
+    if hasattr(mkf, 'original_freq') and mkf.original_freq is not None:
+        if hasattr(mkf, 'sample_rate') and mkf.sample_rate is not None:
+            fs = mkf.sample_rate
+            code.append(f"/* Sample rate: {fs} Hz" + " " * (54 - len(str(fs))) + "*/")
+            if isinstance(mkf.original_freq, list) and len(mkf.original_freq) == 2:
+                f1, f2 = mkf.original_freq
+                code.append(f"/* Frequencies: {f1} Hz - {f2} Hz" + " " * (46 - len(str(f1)) - len(str(f2))) + "*/")
+            else:
+                f = mkf.original_freq if isinstance(mkf.original_freq, (int, float)) else mkf.original_freq[0]
+                code.append(f"/* Frequency:   {f} Hz" + " " * (54 - len(str(f))) + "*/")
+
+    code.append(f"/* Alpha:       {mkf.raw_alpha1:.10f}" + " " * (40) + "*/")
+    if mkf.raw_alpha2 != mkf.raw_alpha1:
+        code.append(f"/*              {mkf.raw_alpha2:.10f}" + " " * (40) + "*/")
+
+    code.append("/* " + "=" * 70 + " */\n")
 
     code.append(f"#define NZEROS {nzeros}")
     code.append(f"#define NPOLES {npoles}")
@@ -574,6 +610,14 @@ Examples:
 
     # Create filter
     mkf = MkFilter()
+
+    # Store original frequency info for C code generation
+    if args.frequencies is not None:
+        mkf.original_freq = args.frequencies if len(args.frequencies) > 1 else args.frequencies[0]
+        mkf.sample_rate = args.sample_rate
+    else:
+        mkf.original_freq = None
+        mkf.sample_rate = None
 
     try:
         alpha1 = alpha[0]
